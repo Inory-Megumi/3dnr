@@ -19,13 +19,15 @@ args = parser.parse_args()
 
 im1 = np.array(Image.open('examples/gt/frame1.png'))
 im2 = np.array(Image.open('examples/gt/frame2.png'))
+# im1 = np.array(Image.open('data/f0_noise.png'))
+# im2 = np.array(Image.open('data/f1_noise.png'))
 im1 = im1.astype(float) / 255.
 im2 = im2.astype(float) / 255.
 
 # Flow Options:
-alpha = 0.03
+alpha = 0.012
 ratio = 0.5
-minWidth = 120
+minWidth = 20
 nOuterFPIterations = 7
 nInnerFPIterations = 1
 nSORIterations = 30

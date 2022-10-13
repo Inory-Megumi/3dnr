@@ -69,31 +69,64 @@ def flow_vis(flow,shape):
     cv2.imwrite('flow.png', rgb)
 
 ## image fusion
-def fuse(cur,warped):
+import math
+def mtf(x):
+    sigma = 20 
+    if x == 0 : 
+        return 1
+    else :
+        return 1 - np.exp(-1 * sigma / x)
+
+def mtflut(diff):
 
 
+    return mtf(diff)
 
-    return 
+def fuse(cur,ref):
+    cur = cur * 255
+    ref = ref * 255
+    height = cur.shape[0]
+    width = cur.shape[1]
+    channel = cur.shape[2]
+    mlut = np.zeros((height,width))
+    new = np.zeros((height,width,channel))
+    for i in range(0,height):
+        for j in range(0,width):
+            cur_Y = 0.2989 * cur[i,j,2] + 0.5870 * cur[i,j,1] + 0.1140 * cur[i,j,0]
+            ref_Y = 0.2989 * ref[i,j,2] + 0.5870 * ref[i,j,1] + 0.1140 * ref[i,j,0]
+            mlut[i,j] = mtflut(abs(cur_Y - ref_Y))
+    
+    mlut_h = np.expand_dims(mlut,2).repeat(3,axis = 2)
+    new = cur + mlut_h * (ref - cur)
+    ## lookup fusion coefficient
+    #cv2.imwrite('new.png',new[:,:,::-1])
+    new = new.astype(float) / 255.
+    return new
+
 ######################
 
 n = len(dirs)
-for i in range(0,1):
+for i in range(0,n):
     #cur = np.array(Image.open('examples/gt/frame2.png'))
     cur = np.array(Image.open(img_folder + dirs[i + 1]))
     cur = cur.astype(float) / 255.
-    # u, v, im2W = pyflow.coarse2fine_flow(
-    # ref, cur, alpha, ratio, minWidth, nOuterFPIterations, nInnerFPIterations,
-    #  nSORIterations, colType)
+    
     u,v,warped = flow(ref, cur)
+    #warped = np.array(Image.open('out/warped/f1_noise.png'))
+    #warped = warped.astype(float) / 255.
+    
+
     ## optical flow visualization
     # flow = np.concatenate((u[..., None], v[..., None]), axis=2)
     # flow_vis(flow,cur.shape)
+
     # warped = warp(ref, -flow)
     # cv2.imwrite('out/'+dirs[i+1] , warped[:, :, ::-1] * 255)
     # cv2.imwrite('warped.png', warped[:, :, ::-1] * 255)
+
     ## warped image and current image fusion
     ref = fuse(cur, warped)
-    cv2.imwrite('out/'+dirs[i+1] , ref[:, :, ::-1] * 255)
+    cv2.imwrite('out/denoised/'+dirs[i+1] , ref[:, :, ::-1] * 255)
 # s = time.time()
 # u, v, im2W = pyflow.coarse2fine_flow(
 #     im1, im2, alpha, ratio, minWidth, nOuterFPIterations, nInnerFPIterations,
